@@ -1,0 +1,27 @@
+from langchain_community.document_loaders import TextLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter  # pyright: ignore[reportMissingImports]
+from langchain_openai import OpenAI, OpenAIEmbeddings,ChatOpenAI
+from langchain.vectorstores import Chroma  # pyright: ignore[reportMissingImports]
+from dotenv import load_dotenv
+import os
+from langchain.chains import RetrievalQA  # pyright: ignore[reportMissingImports]
+
+
+load_dotenv()
+
+loader = TextLoader("databible.txt")
+documents = loader.load()
+
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+texts = text_splitter.split_documents(documents)
+
+embeddings = OpenAIEmbeddings()
+
+vectorestore = Chroma.from_documents(texts, embeddings)
+
+qa = RetrievalQA.from_chain_type(llm=OpenAI(model="gpt-3.5-turbo"), chain_type="stuff", retriever=vectorestore.as_retriever())
+
+query = "What is the meaning of life?"
+result = qa.invoke(query)
+print(result)
+
